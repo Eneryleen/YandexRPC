@@ -5,10 +5,12 @@ namespace YandexRPC.Settings;
 public sealed class AppSettings
 {
     public bool Enabled { get; set; } = true;
-    public string DiscordAppId { get; set; } = "";
+    public string DiscordAppId { get; set; } = "1509561123916087467"; // приложение «Yandex Music» по умолчанию
     public bool RunAtStartup { get; set; }
     public bool ShowButton { get; set; } = true;
+    public bool ShowDownloadButton { get; set; } = true;
     public bool HideWhenPaused { get; set; }
+    public List<CustomButton> CustomButtons { get; set; } = new();
 
     private static readonly string FilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -36,4 +38,10 @@ public sealed class AppSettings
         }
         catch { }
     }
+}
+
+public sealed class CustomButton
+{
+    public string Label { get; set; } = "";
+    public string Url { get; set; } = "";
 }

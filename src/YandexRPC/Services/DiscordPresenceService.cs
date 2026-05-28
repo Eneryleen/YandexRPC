@@ -26,7 +26,8 @@ public sealed class DiscordPresenceService : IDisposable
         }
     }
 
-    public void Update(TrackInfo t)
+    // buttons — кандидаты в порядке приоритета; Discord берёт максимум 2
+    public void Update(TrackInfo t, IReadOnlyList<(string Label, string Url)> buttons)
     {
         if (_client == null) return;
 
@@ -54,8 +55,16 @@ public sealed class DiscordPresenceService : IDisposable
             };
         }
 
-        if (IsHttp(t.TrackUrl) && t.TrackUrl!.Length <= 512)
-            presence.Buttons = new[] { new DiscordRPC.Button { Label = "Открыть", Url = t.TrackUrl } };
+        var valid = new List<DiscordRPC.Button>(2);
+        foreach (var (label, url) in buttons)
+        {
+            if (valid.Count == 2) break;
+            if (!IsHttp(url) || url.Length > 512) continue;
+            var lab = ByteCap(label, 31); // лимит метки кнопки Discord — 31 байт UTF-8
+            if (lab.Length == 0) continue;
+            valid.Add(new DiscordRPC.Button { Label = lab, Url = url });
+        }
+        if (valid.Count > 0) presence.Buttons = valid.ToArray();
 
         try { _client.SetPresence(presence); } catch { }
     }
@@ -74,7 +83,6 @@ public sealed class DiscordPresenceService : IDisposable
 
     public void Dispose() => Disconnect();
 
-    // только https и не длиннее лимита Discord — иначе библиотека бросает исключение на чужой/битой строке
     private static string SafeImage(string? url) =>
         IsHttps(url) && url!.Length <= 256 ? url : "logo";
 
@@ -84,6 +92,23 @@ public sealed class DiscordPresenceService : IDisposable
     private static bool IsHttp(string? url) =>
         Uri.TryCreate(url, UriKind.Absolute, out var u) &&
         (u.Scheme == Uri.UriSchemeHttp || u.Scheme == Uri.UriSchemeHttps);
+
+    private static string ByteCap(string s, int maxBytes)
+    {
+        s = s.Trim();
+        if (System.Text.Encoding.UTF8.GetByteCount(s) <= maxBytes) return s;
+        int bytes = 0, i = 0;
+        while (i < s.Length)
+        {
+            // шаг по кодовой точке, чтобы не разрезать суррогатную пару
+            int step = char.IsHighSurrogate(s[i]) && i + 1 < s.Length && char.IsLowSurrogate(s[i + 1]) ? 2 : 1;
+            int rb = System.Text.Encoding.UTF8.GetByteCount(s.Substring(i, step));
+            if (bytes + rb > maxBytes) break;
+            bytes += rb;
+            i += step;
+        }
+        return s[..i];
+    }
 
     // Discord требует у Details/State минимум 2 символа либо null
     private static string? Clean(string s, int max)

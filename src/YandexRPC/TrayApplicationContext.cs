@@ -23,6 +23,8 @@ public sealed class TrayApplicationContext : ApplicationContext
     private SettingsForm? _settingsForm;
     private bool _cleaned;
 
+    private const string RepoUrl = "https://github.com/Eneryleen/YandexRPC";
+
     public TrayApplicationContext()
     {
         _settings = AppSettings.Load();
@@ -102,13 +104,26 @@ public sealed class TrayApplicationContext : ApplicationContext
             _tray.Text = Cap($"{t.Title} — {t.Artist}", 63);
             await _yandex.EnrichAsync(t);
             if (!ReferenceEquals(_current, t)) return; // трек сменился/пауза за время запроса — не шлём устаревшее
-            if (!_settings.ShowButton) t.TrackUrl = null;
-            _discord.Update(t);
+            _discord.Update(t, BuildButtons(t));
         }
         catch
         {
             _lastSig = ""; // дать повторную попытку на следующем событии
         }
+    }
+
+    // приоритет: трек → свои кнопки → «Скачать RPC»; Discord покажет максимум 2
+    private List<(string Label, string Url)> BuildButtons(TrackInfo t)
+    {
+        var list = new List<(string Label, string Url)>();
+        if (_settings.ShowButton && !string.IsNullOrEmpty(t.TrackUrl))
+            list.Add(("Открыть", t.TrackUrl!));
+        foreach (var b in _settings.CustomButtons)
+            if (!string.IsNullOrWhiteSpace(b.Label) && !string.IsNullOrWhiteSpace(b.Url))
+                list.Add((b.Label, b.Url));
+        if (_settings.ShowDownloadButton)
+            list.Add(("Скачать RPC", RepoUrl));
+        return list;
     }
 
     private void ConnectDiscord()
