@@ -1,0 +1,43 @@
+name: release
+
+# Запускается при пуше тега вида v1.0.0 → собирает и публикует установщик в Releases
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Version from tag
+        id: ver
+        run: echo "version=$($env:GITHUB_REF_NAME -replace '^v','')" >> $env:GITHUB_OUTPUT
+
+      - name: Publish
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: dotnet publish src/YandexRPC/YandexRPC.csproj -c Release -r win-x64 --self-contained true -o publish -p:Version=$env:VERSION
+
+      - name: Install Velopack
+        run: dotnet tool install -g vpk
+
+      - name: Pack
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: vpk pack --packId YandexRPC --packTitle "Яндекс Музыка RPC" --packVersion $env:VERSION --packDir publish --mainExe YandexRPC.exe --icon src/YandexRPC/Resources/app.ico
+
+      - name: Upload to GitHub Release
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+          TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: vpk upload github --repoUrl https://github.com/Eneryleen/YandexRPC --publish --releaseName "YandexRPC $env:VERSION" --tag $env:TAG --token $env:GH_TOKEN
