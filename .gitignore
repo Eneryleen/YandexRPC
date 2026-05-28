@@ -1,0 +1,25 @@
+# Сборка .NET
+bin/
+obj/
+publish/
+out/
+Releases/
+*.user
+*.suo
+*.userprefs
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.DotSettings.user
+
+# Velopack / артефакты упаковки
+*.nupkg
+*.shipit
+AssemblyInfo.g.cs
+
+# Прочее
+*.log
+.DS_Store
+Thumbs.db
