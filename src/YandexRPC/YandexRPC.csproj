@@ -5,6 +5,7 @@
     <!-- версия Windows SDK в TFM включает WinRT (Windows.Media.Control) -->
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -22,10 +23,10 @@
 
   <ItemGroup>
     <PackageReference Include="DiscordRichPresence" Version="1.6.1.70" />
+    <PackageReference Include="Velopack" Version="1.0.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Иконка вшита в exe и грузится в трей по логическому имени app.ico -->
     <EmbeddedResource Include="Resources\app.ico" LogicalName="app.ico" />
   </ItemGroup>
 
